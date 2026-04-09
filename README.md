@@ -1,4 +1,5 @@
 ---
+<<<<<<< HEAD
 title: MTOR Intelligent IT Resolver
 emoji: 🤖
 colorFrom: blue
@@ -249,3 +250,14 @@ MIT License
 
 💡 Tagline
 MTOR – Automating IT Support with Intelligent Multi-Agent Systems
+=======
+title: MTOR
+emoji: 👁
+colorFrom: purple
+colorTo: pink
+sdk: docker
+pinned: false
+---
+
+Check out the configuration reference at https://huggingface.co/docs/hub/spaces-config-reference
+>>>>>>> ed80d1fbf61434e84549b2c1f3815abf9a010446
