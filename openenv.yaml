@@ -1,0 +1,6 @@
+version: "1.0"
+name: "MTOR-IT-Resolver"
+description: "Multi-agent system for resolving IT infrastructure tickets."
+task_levels: ["easy", "medium", "hard"]
+action_space: "Python3 Script Execution"
+observation_space: "Stdout/Stderr Logs"

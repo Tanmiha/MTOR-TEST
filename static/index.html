@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MTOR - Intelligent, Script-Driven Support</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+    <div class="main-container">
+        <div class="title-container">
+            <h1>🤖 MTOR - Intelligent, Script-Driven Support</h1>
+        </div>
+        <div class="subtitle">Your Personalized AI IT Support Assistant</div>
+        <div class="description"><em>Facing a tech issue? Describe it below and let MTOR handle it for you.</em></div>
+
+        <div class="input-label">💬 <strong>Describe your IT issue:</strong></div>
+        <textarea id="userInput" placeholder="e.g. My VPN keeps disconnecting every 10 minutes..." rows="6"></textarea>
+        <button id="submitBtn" onclick="resolveIssue()">🚀 Resolve Now</button>
+        
+        <div id="loading" style="display: none;"><em>MTOR is resolving your issue... ⏳</em></div>
+
+        <div id="responseSection" style="display: none;">
+            <div class="success-box">✅ **AI Response:**</div>
+            <div id="aiResponseText"></div>
+
+            <div id="batDownloadSection" class="download-section" style="display: none;">
+                <p>⚡ <strong>Auto-Fix Script Available!</strong> Download and run this file to fix your issue automatically.</p>
+                <button id="batBtn" class="download-btn">⬇️ Download Windows Fix (.bat)</button>
+            </div>
+
+            <div id="shDownloadSection" class="download-section" style="display: none;">
+                <p>⚡ <strong>Auto-Fix Script Available!</strong> Download and run this file in your terminal to fix your issue automatically.</p>
+                <button id="shBtn" class="download-btn">⬇️ Download Mac/Linux Fix (.sh)</button>
+            </div>
+        </div>
+
+        <div id="feedbackSection" class="feedback-section" style="display: none;">
+            <h3>🙋 Was this solution helpful?</h3>
+            <div class="feedback-buttons">
+                <button onclick="handleFeedback(true)">✅ Yes, issue resolved</button>
+                <button onclick="handleFeedback(false)">❌ No, not helpful</button>
+            </div>
+            <div id="feedbackResult"></div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables to store generated scripts
+        let batScript = "";
+        let shScript = "";
+        let currentUserInput = "";
+
+        async function resolveIssue() {
+            const inputField = document.getElementById("userInput");
+            currentUserInput = inputField.value.trim();
+            
+            if (!currentUserInput) return;
+
+            // Update UI State
+            document.getElementById("submitBtn").disabled = true;
+            document.getElementById("loading").style.display = "block";
+            document.getElementById("responseSection").style.display = "none";
+            document.getElementById("feedbackSection").style.display = "none";
+            document.getElementById("batDownloadSection").style.display = "none";
+            document.getElementById("shDownloadSection").style.display = "none";
+            document.getElementById("feedbackResult").innerHTML = "";
+
+            try {
+                // Send request to your FastAPI backend
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: currentUserInput })
+                });
+                
+                const data = await response.json();
+                let finalResponse = data.reply;
+
+                // --- SCRIPT EXTRACTION (Regex) ---
+                const batRegex = /<SCRIPT_BAT>([\s\S]*?)<\/SCRIPT_BAT>/;
+                const shRegex = /<SCRIPT_SH>([\s\S]*?)<\/SCRIPT_SH>/;
+
+                const batMatch = finalResponse.match(batRegex);
+                if (batMatch) {
+                    batScript = batMatch[1].trim();
+                    document.getElementById("batDownloadSection").style.display = "block";
+                    document.getElementById("batBtn").onclick = () => downloadFile(batScript, "supportx_autofix.bat");
+                }
+
+                const shMatch = finalResponse.match(shRegex);
+                if (shMatch) {
+                    shScript = shMatch[1].trim();
+                    document.getElementById("shDownloadSection").style.display = "block";
+                    document.getElementById("shBtn").onclick = () => downloadFile(shScript, "supportx_autofix.sh");
+                }
+
+                // Clean the text for display (remove the tags)
+                let displayText = finalResponse.replace(batRegex, '').replace(shRegex, '').trim();
+                
+                // Show response
+                document.getElementById("aiResponseText").innerText = displayText;
+                document.getElementById("responseSection").style.display = "block";
+                document.getElementById("feedbackSection").style.display = "block";
+
+            } catch (error) {
+                alert("Error connecting to MTOR backend. Is FastAPI running?");
+            } finally {
+                document.getElementById("submitBtn").disabled = false;
+                document.getElementById("loading").style.display = "none";
+            }
+        }
+
+        async function handleFeedback(isResolved) {
+            const feedbackContainer = document.getElementById("feedbackResult");
+            
+            if (isResolved) {
+                feedbackContainer.innerHTML = "<div class='success-box'>🎉 Great! We're glad your issue is resolved. Thank you!</div>";
+                document.querySelector('.feedback-buttons').style.display = "none";
+            } else {
+                // Generate Ticket ID
+                const ticketId = "TKT-" + Math.random().toString(36).substring(2, 8).toUpperCase();
+                feedbackContainer.innerHTML = `
+                    <div class='warning-box'>⚠️ We're escalating this issue to IT support.</div>
+                    <div class='ticket-id'>📄 Ticket Created: ${ticketId}</div>
+                    <div id='escalationLoading'><em>Notifying IT Agent... ⏳</em></div>
+                `;
+                document.querySelector('.feedback-buttons').style.display = "none";
+
+                // Call backend to trigger Notification Agent
+                try {
+                    const response = await fetch('/escalate', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ issue: currentUserInput, ticket_id: ticketId })
+                    });
+                    const data = await response.json();
+                    
+                    document.getElementById('escalationLoading').style.display = "none";
+                    feedbackContainer.innerHTML += `<div class='info-box'>📨 **Notification Agent Response:**<br><br>${data.reply}</div>`;
+                } catch (error) {
+                    document.getElementById('escalationLoading').innerHTML = "Failed to notify agent.";
+                }
+            }
+        }
+
+        // Helper function to trigger browser file download
+        function downloadFile(content, filename) {
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>
