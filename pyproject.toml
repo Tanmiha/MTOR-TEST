@@ -8,13 +8,14 @@ authors = [
 dependencies = [
     "fastapi",
     "uvicorn",
-    "openenv-core>=0.2.0"  # Added required dependency
+    "pyautogen",
+    "python-dotenv",
+    "openenv-core>=0.2.0"
 ]
 
-# This tells OpenEnv how to run your application
 [project.scripts]
 server = "server.app:main" 
 
 [build-system]
-requires = ["hatchling"] # Recommended for modern 'uv' based projects
+requires = ["hatchling"]
 build-backend = "hatchling.build"
