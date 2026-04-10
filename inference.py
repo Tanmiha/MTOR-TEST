@@ -17,7 +17,7 @@ if HF_TOKEN is None:
     raise ValueError("HF_TOKEN environment variable is required (or AZURE_OPENAI_API_KEY for local testing)")
 
 # Import agents *after* environment variables are set so they pick up the right config
-from group_chat import user, manager, notification_agent
+from server.group_chat import user, manager, notification_agent
 
 def run_inference(task_prompt: str):
     """

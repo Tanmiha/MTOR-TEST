@@ -1,3 +1,7 @@
+import os
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from autogen import GroupChat, GroupChatManager, UserProxyAgent
 from agents.classifier_agent import get_classifier_agent
 from agents.knowledge_base_agent import get_knowledge_base_agent

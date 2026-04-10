@@ -1,13 +1,20 @@
-[build-system]
-requires = ["setuptools", "wheel"]
-build-backend = "setuptools.build_meta"
-
 [project]
-name = "your-project-name"
+name = "mtor-ai-support"
 version = "0.1.0"
-description = "A short description of your project"
-dependencies = [
-    # List your dependencies here, for example:
-    # "numpy",
-    # "pandas",
+description = "MTOR Intelligent Script Driven Support"
+authors = [
+    {name = "MTOR Team"}
 ]
+dependencies = [
+    "fastapi",
+    "uvicorn",
+    "openenv-core>=0.2.0"  # Added required dependency
+]
+
+# This tells OpenEnv how to run your application
+[project.scripts]
+server = "server.app:main" 
+
+[build-system]
+requires = ["hatchling"] # Recommended for modern 'uv' based projects
+build-backend = "hatchling.build"

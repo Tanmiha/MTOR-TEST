@@ -5,9 +5,19 @@ from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel
 import os
 import glob
+import uvicorn
+import sys
 
-# Import your AI agents (Ensure group_chat.py is in the same folder)
-from group_chat import user, manager, notification_agent
+# Ensure the root directory is in the path so it can find group_chat.py
+# if it's still in the root folder.
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+# Import your AI agents
+try:
+    from server.group_chat import user, manager, notification_agent
+except ImportError:
+    # Fallback if group_chat is moved inside the server folder
+    from .group_chat import user, manager, notification_agent
 
 app = FastAPI()
 
@@ -24,8 +34,7 @@ app.add_middleware(
 @app.post("/reset")
 def reset():
     """
-    Scaler judge hits this between tests. We clear AI memory and files,
-    then return the exact JSONResponse you requested.
+    Scaler judge hits this between tests. We clear AI memory and files.
     """
     try:
         # Clear AI Agent Memory
@@ -34,25 +43,26 @@ def reset():
         if hasattr(notification_agent, 'clear_history'): notification_agent.clear_history()
         
         # Clean up previously generated scripts
-        for ext in ["*.bat", "*.sh", "*.txt"]:
+        # Adjust path to look in the parent directory since we are now in /server
+        for ext in ["../*.bat", "../*.sh", "../*.txt"]:
             for filepath in glob.glob(ext):
                 try: os.remove(filepath)
                 except: pass
                 
-        # Your specific return statement
         return JSONResponse({"status": "reset successful"})
     except Exception as e:
-        # Failsafe: return 200 OK so the judge doesn't crash, but log error
         return JSONResponse({"status": "error", "details": str(e)})
 
 # --- 3. HUMAN UI ENDPOINTS (HTML/CSS) ---
-# Mount the static folder so index.html can load style.css
-app.mount("/static", StaticFiles(directory="static"), name="static")
+# Assuming 'static' folder remains at the root
+static_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static")
+app.mount("/static", StaticFiles(directory=static_path), name="static")
 
 @app.get("/")
 def serve_ui():
     """Serves the frontend when a human visits the URL."""
-    return FileResponse("static/index.html")
+    index_path = os.path.join(static_path, "index.html")
+    return FileResponse(index_path)
 
 
 # --- 4. AI COMMUNICATION ENDPOINTS ---
@@ -61,15 +71,6 @@ class ChatRequest(BaseModel):
 
 @app.post("/chat")
 def chat_with_mtor(request: ChatRequest):
-    """
-    Receives text from the HTML UI and sends it to AutoGen.
-    You need to insert your actual AutoGen initiate_chat logic here!
-    """
-    
-    # TODO: Replace these two lines with your actual AutoGen logic
-    # user.initiate_chat(recipient=manager, message=request.message)
-    # final_reply = ... (extract the final string from responses)
-    
     # Placeholder response to test UI
     dummy_reply = f"MTOR received: {request.message}. \n\n<SCRIPT_BAT>echo 'Fixing Windows issue'</SCRIPT_BAT>"
     return {"reply": dummy_reply}
@@ -81,14 +82,12 @@ class EscalateRequest(BaseModel):
 
 @app.post("/escalate")
 def escalate_issue(request: EscalateRequest):
-    """Triggered when user clicks 'No, not helpful' in the UI."""
     notification_message = (
         f"🚨 Unresolved IT Issue\n\n"
         f"User reported: '{request.issue}'\n"
         f"📄 Ticket ID: {request.ticket_id}"
     )
     
-    # Trigger your AutoGen notification agent
     reply = notification_agent.generate_reply(
         messages=[{"role": "user", "content": notification_message}],
         sender=user
@@ -96,3 +95,13 @@ def escalate_issue(request: EscalateRequest):
     
     final_reply = reply.get("content") if isinstance(reply, dict) else str(reply)
     return {"reply": final_reply}
+
+# --- 5. ENTRY POINT FOR OPENENV ---
+def main():
+    """
+    This function is what [project.scripts] server = "server.app:main" calls.
+    """
+    uvicorn.run("server.app:app", host="0.0.0.0", port=8000, reload=False)
+
+if __name__ == "__main__":
+    main()
