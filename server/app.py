@@ -8,20 +8,24 @@ import glob
 import uvicorn
 import sys
 
-# Ensure the root directory is in the path so it can find group_chat.py
-# if it's still in the root folder.
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# 1. PATH FIX: Ensure the root directory is in the system path
+# This allows 'server' to find 'agents', 'utility', and 'tools'
+root_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if root_path not in sys.path:
+    sys.path.append(root_path)
 
-# Import your AI agents
+# 2. IMPORT FIX
 try:
+    # Try importing as a sibling (standard for 'python server/app.py')
+    import group_chat
+    user, manager, notification_agent = group_chat.user, group_chat.manager, group_chat.notification_agent
+except (ImportError, ModuleNotFoundError):
+    # Try importing via the server package
     from server.group_chat import user, manager, notification_agent
-except ImportError:
-    # Fallback if group_chat is moved inside the server folder
-    from .group_chat import user, manager, notification_agent
 
 app = FastAPI()
 
-# --- 1. HACKATHON SECURITY FIX (Prevents 403 Forbidden) ---
+# --- SECURITY FIX ---
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"], 
@@ -30,22 +34,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# --- 2. AUTOMATED JUDGE RESET ENDPOINT ---
+# --- AUTOMATED JUDGE RESET ENDPOINT ---
 @app.post("/reset")
 def reset():
-    """
-    Scaler judge hits this between tests. We clear AI memory and files.
-    """
     try:
-        # Clear AI Agent Memory
         if hasattr(user, 'clear_history'): user.clear_history()
         if hasattr(manager, 'clear_history'): manager.clear_history()
         if hasattr(notification_agent, 'clear_history'): notification_agent.clear_history()
         
-        # Clean up previously generated scripts
-        # Adjust path to look in the parent directory since we are now in /server
-        for ext in ["../*.bat", "../*.sh", "../*.txt"]:
-            for filepath in glob.glob(ext):
+        # Look for scripts in the root directory (one level up from /server)
+        for ext in ["/*.bat", "/*.sh", "/*.txt"]:
+            for filepath in glob.glob(root_path + ext):
                 try: os.remove(filepath)
                 except: pass
                 
@@ -53,27 +52,34 @@ def reset():
     except Exception as e:
         return JSONResponse({"status": "error", "details": str(e)})
 
-# --- 3. HUMAN UI ENDPOINTS (HTML/CSS) ---
-# Assuming 'static' folder remains at the root
-static_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static")
-app.mount("/static", StaticFiles(directory=static_path), name="static")
+# --- HUMAN UI ENDPOINTS ---
+static_path = os.path.join(root_path, "static")
+if os.path.exists(static_path):
+    app.mount("/static", StaticFiles(directory=static_path), name="static")
 
 @app.get("/")
 def serve_ui():
-    """Serves the frontend when a human visits the URL."""
     index_path = os.path.join(static_path, "index.html")
-    return FileResponse(index_path)
+    if os.path.exists(index_path):
+        return FileResponse(index_path)
+    return JSONResponse({"error": "Frontend files not found"}, status_code=404)
 
 
-# --- 4. AI COMMUNICATION ENDPOINTS ---
+# --- AI COMMUNICATION ENDPOINTS ---
 class ChatRequest(BaseModel):
     message: str
 
 @app.post("/chat")
 def chat_with_mtor(request: ChatRequest):
-    # Placeholder response to test UI
-    dummy_reply = f"MTOR received: {request.message}. \n\n<SCRIPT_BAT>echo 'Fixing Windows issue'</SCRIPT_BAT>"
-    return {"reply": dummy_reply}
+    # This now calls your actual agent logic
+    try:
+        # We use a helper to get the response from your agents
+        user.initiate_chat(recipient=manager, message=request.message, clear_history=False)
+        # Get the last message from the chat history
+        last_msg = manager.last_message()["content"]
+        return {"reply": last_msg}
+    except Exception as e:
+        return {"reply": f"Error: {str(e)}"}
 
 
 class EscalateRequest(BaseModel):
@@ -96,11 +102,9 @@ def escalate_issue(request: EscalateRequest):
     final_reply = reply.get("content") if isinstance(reply, dict) else str(reply)
     return {"reply": final_reply}
 
-# --- 5. ENTRY POINT FOR OPENENV ---
+# --- ENTRY POINT ---
 def main():
-    """
-    This function is what [project.scripts] server = "server.app:main" calls.
-    """
+    # Inside the container, we run from the root
     uvicorn.run("server.app:app", host="0.0.0.0", port=8000, reload=False)
 
 if __name__ == "__main__":
