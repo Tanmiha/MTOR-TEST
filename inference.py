@@ -3,21 +3,26 @@ import sys
 import re
 from dotenv import load_dotenv
 
-# Load local .env file if it exists (ignored by the hackathon judge if you don't upload it)
+# Load local .env file if it exists
 load_dotenv()
 
 # --- HYBRID ENVIRONMENT VARIABLES ---
-# If the Hackathon system injects its variables, they take priority.
-# If they are missing (like on your local machine), it falls back to your Azure .env values.
+# Added AZURE_OPENAI_API_KEY as a fallback to prevent immediate crashes
 API_BASE_URL = os.getenv("API_BASE_URL", os.getenv("AZURE_OPENAI_ENDPOINT", "https://mta-azoi-intelligent-ticket.openai.azure.com/"))
 MODEL_NAME = os.getenv("MODEL_NAME", "mtor-gpt")
-HF_TOKEN = os.getenv("HF_TOKEN")
+HF_TOKEN = os.getenv("HF_TOKEN") or os.getenv("AZURE_OPENAI_API_KEY")
 
-if HF_TOKEN is None:
-    raise ValueError("HF_TOKEN environment variable is required (or AZURE_OPENAI_API_KEY for local testing)")
+# CRITICAL FIX: Add current directory to path so 'server.group_chat' is discoverable
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-# Import agents *after* environment variables are set so they pick up the right config
-from server.group_chat import user, manager, notification_agent
+# REMOVED: The 'raise ValueError' that was killing the container in Phase 2
+
+# Import agents *after* path is set
+try:
+    from server.group_chat import user, manager, notification_agent
+except ImportError:
+    # Fallback in case of different container pathing
+    from group_chat import user, manager, notification_agent
 
 def run_inference(task_prompt: str):
     """
@@ -68,6 +73,10 @@ def run_inference(task_prompt: str):
     user.receive = receive_and_capture
 
     try:
+        # Check if we have what we need to start
+        if not API_BASE_URL or not MODEL_NAME:
+            raise ValueError("Missing essential API configuration")
+
         user.initiate_chat(recipient=manager, message=task_prompt)
     
     except Exception as e:
@@ -86,5 +95,6 @@ def run_inference(task_prompt: str):
 
 
 if __name__ == "__main__":
+    # The judge will pass the prompt as the first argument
     test_prompt = sys.argv[1] if len(sys.argv) > 1 else "My VPN keeps disconnecting every 10 minutes."
     run_inference(test_prompt)
