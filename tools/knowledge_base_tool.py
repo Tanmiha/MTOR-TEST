@@ -13,6 +13,8 @@ AZURE_SEARCH_INDEX_NAME = "it-ticket-solutions-index"
 HF_TOKEN = os.getenv("HF_TOKEN")
 API_BASE_URL = os.getenv("API_BASE_URL")
 MODEL_NAME = os.getenv("MODEL_NAME")
+# Use the specific deployment name for embeddings from your .env
+EMBEDDING_MODEL = os.getenv("AZURE_OPENAI_DEPLOYMENT") 
 AZURE_OPENAI_API_VERSION = "2024-02-15-preview"
 
 # Clients
@@ -23,9 +25,10 @@ openai_client = AzureOpenAI(
 )
 
 def embed_text(text: str):
+    # FIX: Changed model from MODEL_NAME to EMBEDDING_MODEL
     response = openai_client.embeddings.create(
         input=[text],
-        model=MODEL_NAME
+        model=EMBEDDING_MODEL
     )
     return response.data[0].embedding
 
