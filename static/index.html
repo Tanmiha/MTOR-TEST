@@ -1,160 +1,919 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MTOR - Intelligent, Script-Driven Support</title>
-    <link rel="stylesheet" href="/static/style.css">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SupportX AI Assist</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --accent-cyan:    #38bdf8;
+    --accent-indigo:  #818cf8;
+    --accent-emerald: #34d399;
+    --glass-bg:       rgba(255,255,255,0.08);
+    --glass-border:   rgba(255,255,255,0.18);
+    --glass-shadow:   0 8px 32px rgba(0,0,0,0.30);
+    --blur:           18px;
+    --radius-lg:      20px;
+    --radius-md:      12px;
+    --radius-sm:      8px;
+    --text-primary:   #f0f9ff;
+    --text-secondary: rgba(240,249,255,0.72);
+    --text-muted:     rgba(240,249,255,0.42);
+    --transition:     0.25s ease;
+    --code-bg:        rgba(8,12,30,0.72);
+  }
+  body {
+    min-height: 100vh;
+    font-family: 'DM Sans', sans-serif;
+    color: var(--text-primary);
+    background:
+      radial-gradient(ellipse at 15% 18%, rgba(56,189,248,0.28) 0%, transparent 52%),
+      radial-gradient(ellipse at 84% 8%,  rgba(129,140,248,0.26) 0%, transparent 48%),
+      radial-gradient(ellipse at 50% 82%, rgba(52,211,153,0.18) 0%, transparent 52%),
+      radial-gradient(circle 260px at 8%  62%, rgba(56,189,248,0.10) 0%, transparent 70%),
+      radial-gradient(circle 200px at 92% 74%, rgba(129,140,248,0.12) 0%, transparent 70%),
+      linear-gradient(135deg, #0c1445 0%, #0f172a 42%, #0d1b35 70%, #0a1628 100%);
+    background-attachment: fixed;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 2.5rem 1rem 4rem;
+  }
+  .container {
+    width: 100%;
+    max-width: 720px;
+    display: flex;
+    flex-direction: column;
+    gap: 1.4rem;
+    animation: pageIn 0.6s ease both;
+  }
+  @keyframes pageIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .glass {
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--blur));
+    -webkit-backdrop-filter: blur(var(--blur));
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--glass-shadow), inset 0 1px 0 rgba(255,255,255,0.12);
+  }
+  /* ── Header ── */
+  .header {
+    padding: 1.6rem 2rem 1.4rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .header::before {
+    content: "";
+    position: absolute;
+    top: -80%; left: -20%;
+    width: 140%; height: 220%;
+    background: conic-gradient(from 180deg at 50% 50%,
+      rgba(56,189,248,0.07)  0deg,
+      rgba(129,140,248,0.07) 120deg,
+      rgba(52,211,153,0.05)  240deg,
+      rgba(56,189,248,0.07)  360deg);
+    animation: rotateOrb 16s linear infinite;
+    border-radius: 50%;
+    pointer-events: none;
+  }
+  @keyframes rotateOrb {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+  }
+  .header-icon { font-size: 2.2rem; display: block; margin-bottom: 0.5rem; position: relative; }
+  .header h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: 2.2rem;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    line-height: 1.1;
+    position: relative;
+    background: linear-gradient(135deg, #e0f2fe 0%, var(--accent-cyan) 45%, var(--accent-indigo) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0.55rem;
+  }
+  .header .subtitle {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 0.3rem;
+    position: relative;
+  }
+  .header .desc {
+    font-size: 0.92rem;
+    font-weight: 300;
+    font-style: italic;
+    color: var(--text-muted);
+    position: relative;
+  }
+  /* ── Form ── */
+  .form-panel {
+    padding: 1.6rem 1.8rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .input-label {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.97rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  textarea {
+    width: 100%;
+    min-height: 148px;
+    resize: vertical;
+    background: rgba(255,255,255,0.06);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-md);
+    padding: 0.95rem 1.1rem;
+    color: var(--text-primary);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.97rem;
+    line-height: 1.6;
+    outline: none;
+    transition: border-color var(--transition), box-shadow var(--transition);
+  }
+  textarea::placeholder { color: var(--text-muted); }
+  textarea:focus {
+    border-color: rgba(56,189,248,0.55);
+    box-shadow: 0 0 0 3px rgba(56,189,248,0.14), inset 0 2px 6px rgba(0,0,0,0.15);
+  }
+  /* ── Buttons ── */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    font-family: 'Syne', sans-serif;
+    font-weight: 600;
+    font-size: 0.95rem;
+    letter-spacing: 0.3px;
+    padding: 0.7rem 1.6rem;
+    border-radius: var(--radius-md);
+    border: 1px solid rgba(56,189,248,0.35);
+    background: linear-gradient(135deg, rgba(56,189,248,0.20) 0%, rgba(129,140,248,0.16) 100%);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    color: var(--text-primary);
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(56,189,248,0.14), inset 0 1px 0 rgba(255,255,255,0.10);
+    transition: all var(--transition);
+    text-decoration: none;
+  }
+  .btn:hover {
+    background: linear-gradient(135deg, rgba(56,189,248,0.36) 0%, rgba(129,140,248,0.28) 100%);
+    border-color: rgba(56,189,248,0.58);
+    box-shadow: 0 6px 24px rgba(56,189,248,0.26), inset 0 1px 0 rgba(255,255,255,0.16);
+    transform: translateY(-2px);
+  }
+  .btn:active { transform: translateY(0); box-shadow: 0 2px 8px rgba(56,189,248,0.16); }
+  .btn:disabled {
+    background: rgba(255,255,255,0.04);
+    border-color: rgba(255,255,255,0.08);
+    color: var(--text-muted);
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+  .btn-full { width: 100%; }
+  .btn-success {
+    border-color: rgba(52,211,153,0.40);
+    background: linear-gradient(135deg, rgba(52,211,153,0.18) 0%, rgba(16,185,129,0.14) 100%);
+    box-shadow: 0 4px 16px rgba(52,211,153,0.14);
+  }
+  .btn-success:hover {
+    background: linear-gradient(135deg, rgba(52,211,153,0.30) 0%, rgba(16,185,129,0.24) 100%);
+    border-color: rgba(52,211,153,0.60);
+    box-shadow: 0 6px 22px rgba(52,211,153,0.24);
+    transform: translateY(-2px);
+  }
+  .btn-danger {
+    border-color: rgba(248,113,113,0.38);
+    background: linear-gradient(135deg, rgba(248,113,113,0.16) 0%, rgba(239,68,68,0.12) 100%);
+    box-shadow: 0 4px 16px rgba(248,113,113,0.12);
+  }
+  .btn-danger:hover {
+    background: linear-gradient(135deg, rgba(248,113,113,0.28) 0%, rgba(239,68,68,0.22) 100%);
+    border-color: rgba(248,113,113,0.58);
+    box-shadow: 0 6px 22px rgba(248,113,113,0.22);
+    transform: translateY(-2px);
+  }
+  .btn-emerald {
+    border-color: rgba(52,211,153,0.45);
+    background: linear-gradient(135deg, rgba(52,211,153,0.15) 0%, rgba(16,185,129,0.10) 100%);
+    box-shadow: 0 4px 16px rgba(52,211,153,0.12);
+    font-size: 0.88rem;
+    padding: 0.5rem 1.1rem;
+  }
+  .btn-emerald:hover {
+    background: linear-gradient(135deg, rgba(52,211,153,0.28) 0%, rgba(16,185,129,0.20) 100%);
+    border-color: rgba(52,211,153,0.65);
+    box-shadow: 0 5px 18px rgba(52,211,153,0.22);
+    transform: translateY(-2px);
+  }
+  .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+  /* ── Spinner ── */
+  .spinner-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    padding: 1rem 1.2rem;
+    background: rgba(56,189,248,0.06);
+    border: 1px solid rgba(56,189,248,0.20);
+    border-radius: var(--radius-md);
+    font-size: 0.92rem;
+    color: var(--text-secondary);
+  }
+  .spinner {
+    width: 18px; height: 18px;
+    border: 2px solid rgba(56,189,248,0.25);
+    border-top-color: var(--accent-cyan);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    flex-shrink: 0;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  /* ── Alerts ── */
+  .alert {
+    padding: 1rem 1.2rem;
+    border-radius: var(--radius-md);
+    font-size: 0.93rem;
+    line-height: 1.6;
+    color: var(--text-secondary);
+    border: 1px solid var(--glass-border);
+    background: rgba(255,255,255,0.06);
+  }
+  .alert-success { border-color: rgba(52,211,153,0.38);  background: rgba(52,211,153,0.07); }
+  .alert-warning { border-color: rgba(251,191,36,0.38);  background: rgba(251,191,36,0.07); }
+  .alert-info    { border-color: rgba(56,189,248,0.32);  background: rgba(56,189,248,0.07); }
+  .alert strong { color: var(--text-primary); }
+  .alert code {
+    background: rgba(56,189,248,0.14);
+    color: var(--accent-cyan);
+    border: 1px solid rgba(56,189,248,0.24);
+    border-radius: 5px;
+    padding: 0.1rem 0.4rem;
+    font-size: 0.88em;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  /* ── Response Panel ── */
+  .response-panel { padding: 1.4rem 1.8rem; }
+  .response-label {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.88rem;
+    font-weight: 600;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    color: var(--accent-cyan);
+    margin-bottom: 0.7rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .response-text {
+    font-size: 0.95rem;
+    line-height: 1.75;
+    color: var(--text-secondary);
+    white-space: pre-wrap;
+  }
+  /* ── Bash Script Panel ── */
+  .bash-panel { padding: 1.4rem 1.8rem; }
+  .bash-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.9rem;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+  .bash-label {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.88rem;
+    font-weight: 600;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    color: var(--accent-emerald);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .bash-actions { display: flex; gap: 0.5rem; align-items: center; }
+  /* Code block */
+  .code-block {
+    position: relative;
+    background: var(--code-bg);
+    border: 1px solid rgba(52,211,153,0.22);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+  }
+  .code-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem 0.9rem;
+    background: rgba(52,211,153,0.08);
+    border-bottom: 1px solid rgba(52,211,153,0.15);
+  }
+  .code-dots { display: flex; gap: 5px; }
+  .code-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+  }
+  .dot-red    { background: rgba(255,95,87,0.80); }
+  .dot-yellow { background: rgba(255,189,46,0.80); }
+  .dot-green  { background: rgba(40,200,64,0.80); }
+  .code-filename {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    color: rgba(52,211,153,0.70);
+    letter-spacing: 0.3px;
+  }
+  .copy-btn {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    background: rgba(52,211,153,0.12);
+    border: 1px solid rgba(52,211,153,0.30);
+    color: var(--accent-emerald);
+    border-radius: 6px;
+    padding: 0.25rem 0.6rem;
+    cursor: pointer;
+    transition: all var(--transition);
+  }
+  .copy-btn:hover {
+    background: rgba(52,211,153,0.22);
+    border-color: rgba(52,211,153,0.55);
+  }
+  .copy-btn.copied {
+    background: rgba(52,211,153,0.25);
+    color: #6ee7b7;
+  }
+  /* Syntax-highlighted pre */
+  .code-pre {
+    margin: 0;
+    padding: 1rem 1.1rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82rem;
+    line-height: 1.7;
+    color: #c9d1d9;
+    overflow-x: auto;
+    white-space: pre;
+    tab-size: 2;
+  }
+  /* Syntax colors */
+  .sh-shebang  { color: #6ee7b7; font-weight: 500; }
+  .sh-comment  { color: #6b7280; font-style: italic; }
+  .sh-keyword  { color: #818cf8; }
+  .sh-string   { color: #86efac; }
+  .sh-cmd      { color: #38bdf8; }
+  .sh-var      { color: #fbbf24; }
+  .sh-flag     { color: #f9a8d4; }
+  .sh-func     { color: #e879f9; font-weight: 500; }
+  .sh-num      { color: #fb923c; }
+  /* Line numbers */
+  .code-pre .line { display: block; }
+  .code-pre .line:hover { background: rgba(255,255,255,0.03); border-radius: 3px; }
+  /* ── Feedback Panel ── */
+  .feedback-panel { padding: 1.4rem 1.8rem; }
+  .feedback-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  /* ── Ticket Badge ── */
+  .ticket-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-family: 'Syne', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--accent-cyan);
+    background: rgba(56,189,248,0.10);
+    border: 1px solid rgba(56,189,248,0.28);
+    border-radius: var(--radius-sm);
+    padding: 0.3rem 0.75rem;
+    margin-top: 0.5rem;
+    letter-spacing: 0.4px;
+  }
+  /* ── Utility ── */
+  .hidden { display: none !important; }
+  .fade-in { animation: fadeUp 0.4s ease both; }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: rgba(255,255,255,0.03); }
+  ::-webkit-scrollbar-thumb { background: rgba(56,189,248,0.28); border-radius: 99px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(56,189,248,0.52); }
+  @media (max-width: 500px) {
+    body { padding: 1.2rem 0.75rem 3rem; }
+    .header { padding: 1.2rem 1.2rem 1rem; }
+    .header h1 { font-size: 1.7rem; }
+    .form-panel, .response-panel, .bash-panel, .feedback-panel { padding: 1.2rem; }
+    .btn-row { grid-template-columns: 1fr; }
+    .bash-header { flex-direction: column; align-items: flex-start; }
+  }
+</style>
 </head>
 <body>
+<div class="container">
 
-    <div class="main-container">
-        <div class="title-container">
-            <h1>🤖 MTOR - Intelligent, Script-Driven Support</h1>
-        </div>
-        <div class="subtitle">Your Personalized AI IT Support Assistant</div>
-        <div class="description"><em>Facing a tech issue? Describe it below and let MTOR handle it for you.</em></div>
+  <!-- Header -->
+  <div class="glass header">
+    <span class="header-icon">🤖</span>
+    <h1>SupportX AI Assist</h1>
+    <p class="subtitle">Your Personalized AI IT Support Assistant</p>
+    <p class="desc"><em>Facing a tech issue? Describe it below and let SupportX AI Assist handle it for you.</em></p>
+  </div>
 
-        <div class="input-label">💬 <strong>Describe your IT issue:</strong></div>
-        <textarea id="userInput" placeholder="e.g. My VPN keeps disconnecting every 10 minutes..." rows="6"></textarea>
-        <button id="submitBtn" onclick="resolveIssue()">🚀 Resolve Now</button>
-        
-        <div id="loading" style="display: none;"><em>MTOR is resolving your issue... ⏳</em></div>
+  <!-- Input Form -->
+  <div class="glass form-panel">
+    <label class="input-label" for="issue-input">
+      💬 <strong>Describe your IT issue:</strong>
+    </label>
+    <textarea id="issue-input"
+      placeholder="e.g. My VPN keeps disconnecting every 10 minutes and I can't stay connected..."></textarea>
+    <button class="btn btn-full" id="resolve-btn" onclick="handleResolve()">
+      🚀 Resolve Now
+    </button>
+  </div>
 
-        <div id="responseSection" style="display: none;">
-            <div class="success-box">✅ **AI Response:**</div>
-            <div id="aiResponseText"></div>
+  <!-- Spinner -->
+  <div class="spinner-wrap hidden" id="spinner">
+    <div class="spinner"></div>
+    <span>SupportX AI Assist is resolving your issue...</span>
+  </div>
 
-            <div id="batDownloadSection" class="download-section" style="display: none;">
-                <p>⚡ <strong>Auto-Fix Script Available!</strong> Download and run this file to fix your issue automatically.</p>
-                <button id="batBtn" class="download-btn">⬇️ Download Windows Fix (.bat)</button>
-            </div>
+  <!-- AI Response -->
+  <div class="glass response-panel hidden fade-in" id="response-panel">
+    <div class="response-label">✅ AI Response</div>
+    <div class="response-text" id="response-text"></div>
+  </div>
 
-            <div id="shDownloadSection" class="download-section" style="display: none;">
-                <p>⚡ <strong>Auto-Fix Script Available!</strong> Download and run this file in your terminal to fix your issue automatically.</p>
-                <button id="shBtn" class="download-btn">⬇️ Download Mac/Linux Fix (.sh)</button>
-            </div>
-        </div>
-
-        <div id="feedbackSection" class="feedback-section" style="display: none;">
-            <h3>🙋 Was this solution helpful?</h3>
-            <div class="feedback-buttons">
-                <button onclick="handleFeedback(true)">✅ Yes, issue resolved</button>
-                <button onclick="handleFeedback(false)">❌ No, not helpful</button>
-            </div>
-            <div id="feedbackResult"></div>
-        </div>
+  <!-- Bash Script Panel -->
+  <div class="glass bash-panel hidden fade-in" id="bash-panel">
+    <div class="bash-header">
+      <div class="bash-label">⚡ Auto-Fix Bash Script</div>
+      <div class="bash-actions">
+        <button class="btn btn-emerald" id="regen-btn" onclick="regenerateScript()">↻ Regenerate</button>
+        <button class="btn btn-emerald" id="download-btn" onclick="downloadScript()">⬇ Download .sh</button>
+      </div>
     </div>
+    <div class="code-block">
+      <div class="code-topbar">
+        <div class="code-dots">
+          <div class="code-dot dot-red"></div>
+          <div class="code-dot dot-yellow"></div>
+          <div class="code-dot dot-green"></div>
+        </div>
+        <span class="code-filename" id="script-filename">fix_issue.sh</span>
+        <button class="copy-btn" id="copy-btn" onclick="copyScript()">Copy</button>
+      </div>
+      <pre class="code-pre" id="bash-code"></pre>
+    </div>
+  </div>
 
-    <script>
-        // Global variables to store generated scripts
-        let batScript = "";
-        let shScript = "";
-        let currentUserInput = "";
+  <!-- Feedback -->
+  <div class="glass feedback-panel hidden fade-in" id="feedback-panel">
+    <div class="feedback-title">🙋 Was this solution helpful?</div>
+    <div class="btn-row">
+      <button class="btn btn-success" onclick="handleFeedbackYes()">✅ Yes, issue resolved</button>
+      <button class="btn btn-danger"  onclick="handleFeedbackNo()">❌ No, not helpful</button>
+    </div>
+  </div>
 
-        async function resolveIssue() {
-            const inputField = document.getElementById("userInput");
-            currentUserInput = inputField.value.trim();
-            
-            if (!currentUserInput) return;
+  <!-- Outcome -->
+  <div class="hidden fade-in" id="outcome-panel"></div>
 
-            // Update UI State
-            document.getElementById("submitBtn").disabled = true;
-            document.getElementById("loading").style.display = "block";
-            document.getElementById("responseSection").style.display = "none";
-            document.getElementById("feedbackSection").style.display = "none";
-            document.getElementById("batDownloadSection").style.display = "none";
-            document.getElementById("shDownloadSection").style.display = "none";
-            document.getElementById("feedbackResult").innerHTML = "";
+</div>
 
-            try {
-                // Send request to your FastAPI backend
-                const response = await fetch('/chat', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: currentUserInput })
-                });
-                
-                const data = await response.json();
-                let finalResponse = data.reply;
-
-                // --- SCRIPT EXTRACTION (Regex) ---
-                const batRegex = /<SCRIPT_BAT>([\s\S]*?)<\/SCRIPT_BAT>/;
-                const shRegex = /<SCRIPT_SH>([\s\S]*?)<\/SCRIPT_SH>/;
-
-                const batMatch = finalResponse.match(batRegex);
-                if (batMatch) {
-                    batScript = batMatch[1].trim();
-                    document.getElementById("batDownloadSection").style.display = "block";
-                    document.getElementById("batBtn").onclick = () => downloadFile(batScript, "supportx_autofix.bat");
-                }
-
-                const shMatch = finalResponse.match(shRegex);
-                if (shMatch) {
-                    shScript = shMatch[1].trim();
-                    document.getElementById("shDownloadSection").style.display = "block";
-                    document.getElementById("shBtn").onclick = () => downloadFile(shScript, "supportx_autofix.sh");
-                }
-
-                // Clean the text for display (remove the tags)
-                let displayText = finalResponse.replace(batRegex, '').replace(shRegex, '').trim();
-                
-                // Show response
-                document.getElementById("aiResponseText").innerText = displayText;
-                document.getElementById("responseSection").style.display = "block";
-                document.getElementById("feedbackSection").style.display = "block";
-
-            } catch (error) {
-                alert("Error connecting to MTOR backend. Is FastAPI running?");
-            } finally {
-                document.getElementById("submitBtn").disabled = false;
-                document.getElementById("loading").style.display = "none";
-            }
-        }
-
-        async function handleFeedback(isResolved) {
-            const feedbackContainer = document.getElementById("feedbackResult");
-            
-            if (isResolved) {
-                feedbackContainer.innerHTML = "<div class='success-box'>🎉 Great! We're glad your issue is resolved. Thank you!</div>";
-                document.querySelector('.feedback-buttons').style.display = "none";
-            } else {
-                // Generate Ticket ID
-                const ticketId = "TKT-" + Math.random().toString(36).substring(2, 8).toUpperCase();
-                feedbackContainer.innerHTML = `
-                    <div class='warning-box'>⚠️ We're escalating this issue to IT support.</div>
-                    <div class='ticket-id'>📄 Ticket Created: ${ticketId}</div>
-                    <div id='escalationLoading'><em>Notifying IT Agent... ⏳</em></div>
-                `;
-                document.querySelector('.feedback-buttons').style.display = "none";
-
-                // Call backend to trigger Notification Agent
-                try {
-                    const response = await fetch('/escalate', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ issue: currentUserInput, ticket_id: ticketId })
-                    });
-                    const data = await response.json();
-                    
-                    document.getElementById('escalationLoading').style.display = "none";
-                    feedbackContainer.innerHTML += `<div class='info-box'>📨 **Notification Agent Response:**<br><br>${data.reply}</div>`;
-                } catch (error) {
-                    document.getElementById('escalationLoading').innerHTML = "Failed to notify agent.";
-                }
-            }
-        }
-
-        // Helper function to trigger browser file download
-        function downloadFile(content, filename) {
-            const blob = new Blob([content], { type: 'text/plain' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = filename;
-            a.click();
-            URL.revokeObjectURL(url);
-        }
-    </script>
+<script>
+  /* ── State ── */
+  let currentIssue      = '';
+  let currentResponse   = '';
+  let currentBashScript = '';
+  /* ── Helpers ── */
+  const $  = id => document.getElementById(id);
+  const show = id => $(id).classList.remove('hidden');
+  const hide = id => $(id).classList.add('hidden');
+  function generateTicketId() {
+    const c = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    return 'TKT-' + Array.from({length:6}, () => c[Math.floor(Math.random()*c.length)]).join('');
+  }
+  /* ── Syntax highlighter ── */
+  function highlight(raw) {
+    // escape HTML first
+    const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    return raw.split('\n').map(line => {
+      let l = esc(line);
+      // shebang
+      if (l.startsWith('#!')) return `<span class="line"><span class="sh-shebang">${l}</span></span>`;
+      // comment
+      if (l.trimStart().startsWith('#')) return `<span class="line"><span class="sh-comment">${l}</span></span>`;
+      // strings (double-quoted)
+      l = l.replace(/(&quot;[^&]*?&quot;|"[^"]*?")/g, m => `<span class="sh-string">${m}</span>`);
+      // single-quoted
+      l = l.replace(/('[^']*')/g, m => `<span class="sh-string">${m}</span>`);
+      // keywords
+      l = l.replace(/\b(if|then|else|elif|fi|for|do|done|while|case|esac|in|function|return|exit|local|true|false)\b/g,
+          m => `<span class="sh-keyword">${m}</span>`);
+      // variables $VAR or ${VAR}
+      l = l.replace(/(\$\{?[A-Z_a-z][A-Z_a-z0-9]*\}?)/g,
+          m => `<span class="sh-var">${m}</span>`);
+      // common commands
+      l = l.replace(/\b(echo|sudo|apt|apt-get|yum|dnf|brew|systemctl|service|ping|curl|wget|chmod|chown|mkdir|rm|cp|mv|cat|grep|sed|awk|find|kill|pkill|ip|ifconfig|nmcli|netstat|ss|openssl|python3?|pip3?|npm|node|docker|git|journalctl|tail|head|wc|ps|df|du|mount|umount|uname|lsof|nmap|nc|telnet|traceroute|dig|nslookup|resolvectl|timedatectl|sysctl|modprobe|lsmod|update-alternatives|ldconfig|dpkg|rpm|snap)\b/g,
+          m => `<span class="sh-cmd">${m}</span>`);
+      // flags -x or --flag
+      l = l.replace(/((?:^|\s)(--?[a-zA-Z][-a-zA-Z0-9]*))/g,
+          (m, full, flag) => full.replace(flag, `<span class="sh-flag">${flag}</span>`));
+      // numbers
+      l = l.replace(/\b(\d+)\b/g, m => `<span class="sh-num">${m}</span>`);
+      return `<span class="line">${l}</span>`;
+    }).join('\n');
+  }
+  function renderScript(script) {
+    currentBashScript = script;
+    $('bash-code').innerHTML = highlight(script);
+  }
+  /* ── Main resolve ── */
+  async function handleResolve() {
+    const input = $('issue-input').value.trim();
+    if (!input) return;
+    currentIssue = input;
+    hide('response-panel');
+    hide('bash-panel');
+    hide('feedback-panel');
+    hide('outcome-panel');
+    $('outcome-panel').innerHTML = '';
+    show('spinner');
+    $('resolve-btn').disabled = true;
+    try {
+      /* INTEGRATION POINT — replace mock with:
+         const res  = await fetch('/resolve', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({issue:input}) });
+         const data = await res.json();
+         currentResponse   = data.response;
+         currentBashScript = data.bash_script;
+      */
+      await new Promise(r => setTimeout(r, 1800));
+      const result = getMockResult(input);
+      currentResponse = result.response;
+      $('response-text').textContent = currentResponse;
+      show('response-panel');
+      // Render bash script
+      const slug = input.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'').slice(0,24);
+      $('script-filename').textContent = `fix_${slug}.sh`;
+      renderScript(result.bash);
+      show('bash-panel');
+      show('feedback-panel');
+    } catch(err) {
+      $('outcome-panel').innerHTML = `<div class="alert alert-warning">⚠️ No response received from the agents. Please try again.</div>`;
+      show('outcome-panel');
+    } finally {
+      hide('spinner');
+      $('resolve-btn').disabled = false;
+    }
+  }
+  /* ── Regenerate (re-runs same issue) ── */
+  function regenerateScript() {
+    if (!currentIssue) return;
+    const result = getMockResult(currentIssue);
+    renderScript(result.bash);
+    const btn = $('regen-btn');
+    btn.textContent = '✓ Regenerated';
+    setTimeout(() => { btn.textContent = '↻ Regenerate'; }, 1800);
+  }
+  /* ── Copy ── */
+  function copyScript() {
+    navigator.clipboard.writeText(currentBashScript).then(() => {
+      const btn = $('copy-btn');
+      btn.textContent = 'Copied!';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+    });
+  }
+  /* ── Download ── */
+  function downloadScript() {
+    const filename = $('script-filename').textContent || 'fix_issue.sh';
+    const blob = new Blob([currentBashScript], { type: 'text/x-sh' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = filename; a.click();
+    URL.revokeObjectURL(url);
+  }
+  /* ── Feedback ── */
+  function handleFeedbackYes() {
+    hide('feedback-panel');
+    $('outcome-panel').innerHTML = `
+      <div class="alert alert-success fade-in">
+        🎉 <strong>Great!</strong> We're glad your issue is resolved. Thank you for using SupportX AI Assist!
+      </div>`;
+    show('outcome-panel');
+  }
+  function handleFeedbackNo() {
+    hide('feedback-panel');
+    const ticketId = generateTicketId();
+    $('outcome-panel').innerHTML = `
+      <div class="alert alert-warning fade-in">
+        ⚠️ <strong>Escalating to IT Support.</strong><br/>
+        We're sorry the solution didn't help. A support engineer will follow up shortly.<br/>
+        <span class="ticket-badge">📄 ${ticketId}</span>
+      </div>
+      <div class="alert alert-info fade-in" style="margin-top:0.75rem;">
+        📨 <strong>Notification Agent:</strong> Ticket <code>${ticketId}</code> has been created and assigned to the IT support queue. You will receive an email confirmation within 5 minutes.
+      </div>`;
+    show('outcome-panel');
+  }
+  /* ── Ctrl+Enter shortcut ── */
+  $('issue-input').addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') handleResolve();
+  });
+  /* ── Mock data — replace with real backend ── */
+  function getMockResult(issue) {
+    const l = issue.toLowerCase();
+    if (l.includes('vpn')) return {
+      response: "VPN Troubleshooting Steps:\n\n1. Restart your VPN client completely (quit and reopen).\n2. Check that UDP port 1194 is not blocked by your firewall.\n3. If the issue persists, reinstall the VPN client — version mismatch is a common cause of disconnections.\n4. Ensure your network adapter drivers are up to date.\n5. Try switching between TCP and UDP protocols in the VPN settings.",
+      bash: `#!/usr/bin/env bash
+# fix_vpn.sh — Auto-generated by SupportX AI Assist
+# Resolves: VPN disconnection / connectivity issues
+set -euo pipefail
+LOG="/tmp/supportx_vpn_fix.log"
+echo "[$(date)] Starting VPN auto-fix..." | tee "$LOG"
+# ── Step 1: Kill existing VPN processes ──────────────────────────
+echo ">> Stopping active VPN processes..."
+sudo pkill -f openvpn  2>/dev/null || true
+sudo pkill -f vpnc     2>/dev/null || true
+sudo pkill -f openfortivpn 2>/dev/null || true
+sleep 2
+# ── Step 2: Flush stale routes ───────────────────────────────────
+echo ">> Flushing stale routing table entries..."
+sudo ip route flush cache 2>/dev/null || true
+# ── Step 3: Reset DNS resolver ───────────────────────────────────
+echo ">> Restarting DNS resolver..."
+if command -v resolvectl &>/dev/null; then
+  sudo resolvectl flush-caches
+elif command -v systemd-resolve &>/dev/null; then
+  sudo systemd-resolve --flush-caches
+fi
+# ── Step 4: Check UDP 1194 reachability ─────────────────────────
+VPN_HOST="\${VPN_HOST:-vpn.company.com}"
+echo ">> Testing UDP port 1194 to \$VPN_HOST ..."
+if command -v nc &>/dev/null; then
+  nc -zu "\$VPN_HOST" 1194 -w 5 && echo "   Port 1194 reachable." || echo "   WARNING: Port 1194 may be blocked."
+else
+  echo "   nc not found — skipping port check."
+fi
+# ── Step 5: Restart NetworkManager ──────────────────────────────
+echo ">> Restarting NetworkManager..."
+sudo systemctl restart NetworkManager
+sleep 3
+# ── Step 6: Re-connect VPN (edit path as needed) ─────────────────
+VPN_CONFIG="\${VPN_CONFIG:-/etc/openvpn/client.conf}"
+if [[ -f "\$VPN_CONFIG" ]]; then
+  echo ">> Reconnecting with config: \$VPN_CONFIG"
+  sudo openvpn --config "\$VPN_CONFIG" --daemon
+  echo "   VPN daemon started."
+else
+  echo "   No config found at \$VPN_CONFIG — please reconnect manually."
+fi
+echo "[$(date)] VPN auto-fix complete. See \$LOG for details."
+`
+    };
+    if (l.includes('dns') || l.includes('network') || l.includes('internet') || l.includes('wifi')) return {
+      response: "Network / DNS Troubleshooting Steps:\n\n1. Check if the issue is Wi-Fi or wired — test both.\n2. Flush DNS cache and renew your IP lease.\n3. Reset the network stack (TCP/IP).\n4. Restart NetworkManager or the system network service.\n5. Try an alternate DNS server (8.8.8.8) to isolate DNS problems.",
+      bash: `#!/usr/bin/env bash
+# fix_network.sh — Auto-generated by SupportX AI Assist
+# Resolves: Network / DNS / connectivity issues
+set -euo pipefail
+LOG="/tmp/supportx_network_fix.log"
+echo "[$(date)] Starting network auto-fix..." | tee "$LOG"
+# ── Step 1: Display current network status ───────────────────────
+echo ">> Current network interfaces:"
+ip -brief addr show
+# ── Step 2: Flush DNS cache ──────────────────────────────────────
+echo ">> Flushing DNS cache..."
+if command -v resolvectl &>/dev/null; then
+  sudo resolvectl flush-caches && echo "   systemd-resolved cache flushed."
+elif [[ -f /etc/init.d/nscd ]]; then
+  sudo service nscd restart
+fi
+# ── Step 3: Release and renew DHCP lease ────────────────────────
+IFACE="\$(ip route | awk '/default/{print \$5; exit}')"
+echo ">> Renewing DHCP lease on \$IFACE ..."
+sudo dhclient -r "\$IFACE" 2>/dev/null || true
+sleep 1
+sudo dhclient "\$IFACE"   2>/dev/null || true
+# ── Step 4: Reset routing table ─────────────────────────────────
+echo ">> Flushing route cache..."
+sudo ip route flush cache
+# ── Step 5: Test connectivity ────────────────────────────────────
+echo ">> Pinging 8.8.8.8 (Google DNS)..."
+ping -c 4 8.8.8.8 && echo "   Internet reachable." || echo "   WARNING: Cannot reach 8.8.8.8"
+echo ">> Testing DNS resolution..."
+dig +short google.com @8.8.8.8 || nslookup google.com 8.8.8.8 || echo "   DNS resolution failed."
+# ── Step 6: Restart NetworkManager ──────────────────────────────
+echo ">> Restarting NetworkManager..."
+sudo systemctl restart NetworkManager
+sleep 3
+echo "[$(date)] Network auto-fix complete. See \$LOG for details."
+`
+    };
+    if (l.includes('password') || l.includes('login') || l.includes('auth') || l.includes('ssh')) return {
+      response: "Authentication Troubleshooting Steps:\n\n1. Clear saved/cached credentials from your credential manager.\n2. Re-generate SSH keys if using key-based auth.\n3. Verify your account is not locked.\n4. Check system clock — time skew breaks Kerberos/MFA.\n5. Contact IT with your employee ID for a manual unlock.",
+      bash: `#!/usr/bin/env bash
+# fix_auth.sh — Auto-generated by SupportX AI Assist
+# Resolves: Authentication / login / SSH issues
+set -euo pipefail
+LOG="/tmp/supportx_auth_fix.log"
+echo "[$(date)] Starting auth auto-fix..." | tee "$LOG"
+# ── Step 1: Check system clock sync ─────────────────────────────
+echo ">> Checking time synchronisation (skew breaks MFA/Kerberos)..."
+if command -v timedatectl &>/dev/null; then
+  timedatectl status
+  sudo timedatectl set-ntp true && echo "   NTP sync enabled."
+fi
+# ── Step 2: Clear GNOME keyring / libsecret stale entries ────────
+echo ">> Clearing stale keyring entries (if any)..."
+if command -v secret-tool &>/dev/null; then
+  secret-tool clear server "$(hostname)" 2>/dev/null || true
+fi
+# ── Step 3: Reset SSH known_hosts for localhost issues ───────────
+echo ">> Removing stale SSH known_hosts entries for localhost..."
+ssh-keygen -R localhost 2>/dev/null || true
+ssh-keygen -R 127.0.0.1 2>/dev/null || true
+# ── Step 4: Regenerate SSH keypair (optional — uncomment) ────────
+# SSH_KEY="$HOME/.ssh/id_ed25519"
+# if [[ ! -f "\$SSH_KEY" ]]; then
+#   echo ">> Generating new Ed25519 SSH key..."
+#   ssh-keygen -t ed25519 -C "$(whoami)@$(hostname)" -f "\$SSH_KEY" -N ""
+#   echo "   Public key:"
+#   cat "\${SSH_KEY}.pub"
+# fi
+# ── Step 5: Fix SSH config permissions ──────────────────────────
+echo ">> Fixing SSH directory permissions..."
+chmod 700 "$HOME/.ssh"         2>/dev/null || true
+chmod 600 "$HOME/.ssh/"*       2>/dev/null || true
+chmod 644 "$HOME/.ssh/"*.pub   2>/dev/null || true
+# ── Step 6: Test SSH to a target (edit as needed) ────────────────
+TARGET="\${SSH_TARGET:-git@github.com}"
+echo ">> Testing SSH connection to \$TARGET ..."
+ssh -T -o ConnectTimeout=8 "\$TARGET" 2>&1 || true
+echo "[$(date)] Auth auto-fix complete. See \$LOG for details."
+`
+    };
+    if (l.includes('disk') || l.includes('storage') || l.includes('space') || l.includes('slow') || l.includes('performance')) return {
+      response: "Performance / Disk Space Troubleshooting:\n\n1. Identify top disk usage with du/df.\n2. Clear temp files, package caches, and old logs.\n3. Check CPU/RAM usage for runaway processes.\n4. Drop filesystem caches to free RAM.\n5. Check for failing disk health with smartctl.",
+      bash: `#!/usr/bin/env bash
+# fix_performance.sh — Auto-generated by SupportX AI Assist
+# Resolves: Slow system / disk space / performance issues
+set -euo pipefail
+LOG="/tmp/supportx_perf_fix.log"
+echo "[$(date)] Starting performance auto-fix..." | tee "$LOG"
+# ── Step 1: Show disk usage ──────────────────────────────────────
+echo ">> Disk usage summary:"
+df -h --output=source,size,used,avail,pcent,target | head -20
+# ── Step 2: Find top 10 largest directories ──────────────────────
+echo ">> Top 10 largest directories under /:"
+du -h --max-depth=3 / 2>/dev/null | sort -rh | head -10
+# ── Step 3: Clean package cache ─────────────────────────────────
+echo ">> Cleaning package manager cache..."
+if command -v apt-get &>/dev/null; then
+  sudo apt-get clean && sudo apt-get autoremove -y
+elif command -v yum &>/dev/null; then
+  sudo yum clean all
+elif command -v dnf &>/dev/null; then
+  sudo dnf clean all
+fi
+# ── Step 4: Remove old temp files ────────────────────────────────
+echo ">> Removing files in /tmp older than 7 days..."
+find /tmp -type f -atime +7 -delete 2>/dev/null || true
+echo ">> Removing files in /var/log older than 30 days..."
+find /var/log -type f -name "*.log" -mtime +30 -delete 2>/dev/null || true
+# ── Step 5: Drop filesystem caches ──────────────────────────────
+echo ">> Dropping page cache to free RAM..."
+sync && echo 3 | sudo tee /proc/sys/vm/drop_caches > /dev/null
+echo "   Done. Current memory:"
+free -h
+# ── Step 6: Report top CPU processes ─────────────────────────────
+echo ">> Top 5 CPU-consuming processes:"
+ps aux --sort=-%cpu | head -6
+# ── Step 7: Check disk health (requires smartmontools) ───────────
+if command -v smartctl &>/dev/null; then
+  ROOT_DISK="\$(lsblk -ndo NAME / | head -1)"
+  echo ">> SMART health for /dev/\$ROOT_DISK :"
+  sudo smartctl -H "/dev/\$ROOT_DISK" || true
+else
+  echo "   smartctl not installed — skipping disk health check."
+fi
+echo "[$(date)] Performance auto-fix complete. See \$LOG for details."
+`
+    };
+    if (l.includes('email') || l.includes('outlook') || l.includes('smtp')) return {
+      response: "Email / Outlook Troubleshooting Steps:\n\n1. Verify SMTP settings: smtp.company.com port 587 with TLS.\n2. Recreate your Outlook mail profile.\n3. Check mailbox quota hasn't been exceeded.\n4. Test SMTP reachability from the command line.",
+      bash: `#!/usr/bin/env bash
+# fix_email.sh — Auto-generated by SupportX AI Assist
+# Resolves: Email / SMTP / Outlook connectivity issues
+set -euo pipefail
+SMTP_HOST="\${SMTP_HOST:-smtp.company.com}"
+SMTP_PORT="\${SMTP_PORT:-587}"
+LOG="/tmp/supportx_email_fix.log"
+echo "[$(date)] Starting email auto-fix..." | tee "$LOG"
+# ── Step 1: Test SMTP connectivity ──────────────────────────────
+echo ">> Testing TCP connection to \$SMTP_HOST:\$SMTP_PORT ..."
+if command -v nc &>/dev/null; then
+  nc -zv "\$SMTP_HOST" "\$SMTP_PORT" -w 5 && echo "   SMTP port reachable." || echo "   WARNING: Cannot reach SMTP port."
+else
+  curl --connect-timeout 6 --max-time 8 "smtp://\$SMTP_HOST:\$SMTP_PORT" 2>&1 | head -5 || true
+fi
+# ── Step 2: Check DNS MX record ──────────────────────────────────
+DOMAIN="\${EMAIL_DOMAIN:-company.com}"
+echo ">> Checking MX records for \$DOMAIN ..."
+dig +short MX "\$DOMAIN" || nslookup -query=MX "\$DOMAIN" || true
+# ── Step 3: Verify TLS certificate ──────────────────────────────
+echo ">> Checking TLS cert on \$SMTP_HOST:\$SMTP_PORT ..."
+openssl s_client -starttls smtp -connect "\$SMTP_HOST:\$SMTP_PORT" \
+  -servername "\$SMTP_HOST" 2>/dev/null | openssl x509 -noout -dates 2>/dev/null || \
+  echo "   Could not retrieve TLS cert info."
+# ── Step 4: Clear local mail queue (postfix/sendmail) ────────────
+if command -v postfix &>/dev/null; then
+  echo ">> Flushing local postfix queue..."
+  sudo postfix flush 2>/dev/null || true
+fi
+# ── Step 5: Check mail logs for errors ───────────────────────────
+echo ">> Last 20 lines of mail log:"
+sudo tail -20 /var/log/mail.log 2>/dev/null || sudo journalctl -u postfix --lines=20 2>/dev/null || true
+echo "[$(date)] Email auto-fix complete. See \$LOG for details."
+`
+    };
+    // Generic fallback
+    return {
+      response: "General IT Support Steps:\n\n1. Restart the affected application and your computer.\n2. Check for pending OS or software updates.\n3. Clear temporary files and caches.\n4. Run the built-in system diagnostics.\n5. Check system logs for specific error codes.",
+      bash: `#!/usr/bin/env bash
+# fix_general.sh — Auto-generated by SupportX AI Assist
+# Resolves: General IT issue — system cleanup and diagnostics
+set -euo pipefail
+LOG="/tmp/supportx_general_fix.log"
+echo "[$(date)] Starting general system auto-fix..." | tee "$LOG"
+# ── Step 1: System info ──────────────────────────────────────────
+echo ">> System info:"
+uname -a
+echo "   Uptime: $(uptime -p)"
+# ── Step 2: Check disk space ─────────────────────────────────────
+echo ">> Disk usage:"
+df -h /
+# ── Step 3: Check available memory ──────────────────────────────
+echo ">> Memory usage:"
+free -h
+# ── Step 4: Clear temp files ─────────────────────────────────────
+echo ">> Cleaning temp files..."
+find /tmp -type f -atime +3 -delete 2>/dev/null || true
+sync && echo 1 | sudo tee /proc/sys/vm/drop_caches > /dev/null
+echo "   Caches dropped."
+# ── Step 5: Update package index and upgrade ─────────────────────
+echo ">> Updating system packages..."
+if command -v apt-get &>/dev/null; then
+  sudo apt-get update -q && sudo apt-get upgrade -y
+elif command -v yum &>/dev/null; then
+  sudo yum update -y
+elif command -v dnf &>/dev/null; then
+  sudo dnf upgrade -y
+fi
+# ── Step 6: Check recent system errors ──────────────────────────
+echo ">> Recent kernel errors (last 30 lines):"
+sudo journalctl -p err -n 30 --no-pager 2>/dev/null || \
+  sudo dmesg --level=err | tail -30 2>/dev/null || true
+# ── Step 7: Restart affected services ───────────────────────────
+# Uncomment and edit as needed:
+# sudo systemctl restart <your-service>
+echo "[$(date)] General auto-fix complete. See \$LOG for details."
+`
+    };
+  }
+</script>
 </body>
 </html>
